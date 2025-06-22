@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demographics - CISEPA Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <style>
+    .charts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+      gap: 32px;
+      max-width: 1400px;
+      margin: 0 auto 40px auto;
+      padding: 0 20px;
+    }
+    .chart-box {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(0, 87, 184, 0.07);
+      padding: 30px;
+      transition: box-shadow 0.2s;
+      margin-bottom: 6px;
+      border-top: 3px solid #0057B8;
+      min-height: 500px;
+    }
+    .chart-box:hover {
+      box-shadow: 0 6px 24px rgba(0, 87, 184, 0.17);
+    }
+    h2 {
+      color: #0057B8;
+      text-align: center;
+      font-size: 1.3rem;
+      margin-top: 0;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    .tab-navigation {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      gap: 10px;
+    }
+    .tab-button {
+      padding: 8px 16px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab-button.active {
+      background-color: #0057B8;
+      color: white;
+      border-color: #0057B8;
+    }
+    .tab-content {
+      display: none;
+      max-width: 1400px;
+      margin: 0 auto 40px auto;
+      padding: 0 20px;
+    }
+    @media (max-width: 600px) {
+      .tab-navigation { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Section -->
+  <header class="site-header">
+    <div class="logo-container">
+      <div class="site-logo"></div>
+      <h1 class="site-title">CISEPA Dashboard</h1>
+    </div>
+    <div class="search-container">
+      <input type="text" placeholder="Search this site" class="search-bar">
+    </div>
+    <div class="accessibility-links">
+      <a href="#main-content" class="skip-link">Skip to main content</a>
+      <a href="#navigation" class="skip-link">Skip to navigation</a>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav id="navigation" class="main-nav">
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">Current Dashboards</a>
+        <ul class="dropdown-menu">
+          <li><a href="index.html#student-services-overview">Student Services Overview</a></li>
+          <li><a href="tier_activities.html">Tier Support Activities</a></li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">Annual Outcomes</a>
+        <ul class="dropdown-menu">
+          <li><a href="student_engagement.html">Students Served</a></li>
+          <li><a href="student_progress_tracker.html">Student Progress</a></li>
+          <li><a href="demographics.html" class="active">Demographics</a></li>
+          <li><a href="attributes.html">Student Attributes</a></li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">More...</a>
+        <ul class="dropdown-menu">
+          <li><a href="school.html">School Dashboard</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <section class="content-section">
+      <h1 class="section-title">Demographics</h1>
+
+      <div class="controls">
+        <div>
+          <label for="schoolSelect">Select School:</label>
+          <select id="schoolSelect" onchange="updateCharts()">
+            <option value="all">All Schools</option>
+          </select>
+        </div>
+        <div>
+          <label for="yearSelect">Select Year:</label>
+          <select id="yearSelect" onchange="loadAllCSVs()">
+            <option value="2023-2024">2023-2024</option>
+            <option value="2022-2023">2022-2023</option>
+            <option value="2021-2022">2021-2022</option>
+            <option value="2020-2021">2020-2021</option>
+            <option value="2019-2020">2019-2020</option>
+            <option value="2018-2019">2018-2019</option>
+            <option value="2017-2018">2017-2018</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button class="tab-button" data-tab="gender-tab">Gender Distribution</button>
+        <button class="tab-button" data-tab="race-tab">Race Distribution</button>
+      </div>
+      
+      <!-- Tab Content -->
+      <div class="tab-content" id="gender-tab">
+        <div class="chart-box">
+          <h2>Gender Distribution</h2>
+          <div id="genderChart"></div>
+        </div>
+      </div>
+      
+      <div class="tab-content" id="race-tab">
+        <div class="chart-box">
+          <h2>Race Distribution</h2>
+          <div id="raceChart"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <p class="attribution">Data and visualizations prepared by Jon Irons, Manager of Data and Evaluation. Contact with questions or to request additional data <a href="mailto:ironsj@ciseasternpa.org">ironsj@ciseasternpa.org</a> Call/Text: 484-891-1760</p>
+      <div class="utility-links">
+        <a href="#" class="utility-link">Report abuse</a>
+        <a href="#" class="utility-link">Page details</a>
+        <span class="page-updated">Page updated: May 31, 2025</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="js/navigation.js"></script>
+
+  <script>
+    const csvUrls = {
+      "2023-2024": 'student_data/CIS_EOY_2023_2024 - Student Data.csv',
+      "2022-2023": 'student_data/CIS_EOY_2022_2023 - Student Data.csv',
+      "2021-2022": 'student_data/CIS_EOY_2021_2022 - Student Data.csv',
+      "2020-2021": 'student_data/CIS_EOY_2020_2021 - Student Data.csv',
+      "2019-2020": 'student_data/CIS_EOY_2019_2020 - Student Data.csv',
+      "2018-2019": 'student_data/CIS_EOY_2018_2019 - Student Data.csv',
+      "2017-2018": 'student_data/CIS_EOY_2017_2018 - Student Data.csv'
+    };
+
+    let allData = [];
+
+    // Load all CSV files
+    function loadAllCSVs() {
+      // Disable controls while loading
+      document.querySelectorAll('select').forEach(select => select.disabled = true);
+      
+      const yearSelect = document.getElementById('yearSelect');
+      const selectedYear = yearSelect.value;
+      const url = csvUrls[selectedYear];
+      
+      console.log(`Loading data for ${selectedYear} from ${url}`);
+      
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          if (results.errors.length > 0 && results.errors[0].code !== 'UndetectableDelimiter') {
+            console.error('Error parsing CSV:', results.errors);
+            document.querySelectorAll('select').forEach(select => select.disabled = false);
+            return;
+          }
+          
+          // Store data
+          allData = results.data.map(row => ({
+            ...row,
+            year: selectedYear
+          }));
+          
+          console.log(`Loaded ${allData.length} rows for ${selectedYear}`);
+          
+          // Enable controls
+          document.querySelectorAll('select').forEach(select => select.disabled = false);
+          
+          // Populate school dropdown
+          populateSchoolDropdown();
+          
+          // Activate first tab and load initial charts
+          activateFirstTab();
+        },
+        error: function(error) {
+          console.error('Error loading CSV:', error);
+          document.querySelectorAll('select').forEach(select => select.disabled = false);
+        }
+      });
+    }
+
+    // Populate the school dropdown
+    function populateSchoolDropdown() {
+      // Get unique schools
+      const schools = [];
+      allData.forEach(row => {
+        // Check both 'School Name' and 'School Where Support Was Provided' columns
+        const school = row['School Name'] || row['School Where Support Was Provided'];
+        if (school && !schools.includes(school)) {
+          schools.push(school);
+        }
+      });
+      
+      // Sort schools alphabetically
+      schools.sort();
+      
+      const schoolSelect = document.getElementById('schoolSelect');
+      schoolSelect.innerHTML = '<option value="all">All Schools</option>';
+      schools.forEach(school => {
+        const option = document.createElement('option');
+        option.value = school;
+        option.textContent = school;
+        schoolSelect.appendChild(option);
+      });
+    }
+
+    // Update the charts based on selected school and year
+    function updateCharts() {
+      // Get the active tab
+      const activeTab = document.querySelector('.tab-button.active');
+      if (!activeTab) {
+        // If no tab is active, activate the first tab
+        activateFirstTab();
+        return;
+      }
+      
+      const tabId = activeTab.getAttribute('data-tab');
+      
+      // Only update charts for the active tab
+      if (tabId === 'gender-tab') {
+        updateGenderChart();
+      } else if (tabId === 'race-tab') {
+        updateRaceChart();
+      }
+    }
+    
+    function getFilteredData() {
+      const selectedSchool = document.getElementById('schoolSelect').value;
+      const selectedYear = document.getElementById('yearSelect').value;
+      
+      // Filter data by school and year
+      return allData.filter(row => {
+        if (selectedSchool === 'all') {
+          return row.year === selectedYear;
+        }
+        // Check both 'School Name' and 'School Where Support Was Provided' columns
+        const schoolName = row['School Name'] || row['School Where Support Was Provided'];
+        return row.year === selectedYear && schoolName === selectedSchool;
+      });
+    }
+    
+    function updateGenderChart() {
+      console.log("updateGenderChart called");
+      const filtered = getFilteredData();
+      console.log("Filtered data length:", filtered.length);
+
+      // Calculate gender distribution by summing across race columns
+      const genderCounts = {
+        'Female': 0,
+        'Male': 0,
+        'Other Gender': 0,
+        'Unknown Gender': 0
+      };
+
+      // Debug: log column names to check pattern matching
+      if (filtered.length > 0) {
+        console.log("Sample column names:", Object.keys(filtered[0]));
+      }
+
+      filtered.forEach(row => {
+        // Sum all female columns
+        Object.keys(row).forEach(key => {
+          if (key.includes('Students, Female -')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) {
+              genderCounts['Female'] += value;
+            }
+          } else if (key.includes('Students, Male -')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) {
+              genderCounts['Male'] += value;
+            }
+          } else if (key.includes('Students, Other Gender -')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) {
+              genderCounts['Other Gender'] += value;
+            }
+          } else if (key.includes('Students, Unknown Gender -')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) {
+              genderCounts['Unknown Gender'] += value;
+            }
+          }
+        });
+      });
+
+      const genderLabels = Object.keys(genderCounts);
+      const genderValues = Object.values(genderCounts);
+
+      console.log("Gender Counts:", genderCounts);
+
+      if (genderValues.every(val => val === 0)) {
+          document.getElementById('genderChart').innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><p>No gender data available for this selection.</p><p>Please try selecting a different school or year.</p></div>';
+          return;
+      }
+
+      // Plot gender chart
+      Plotly.newPlot('genderChart', [{
+          values: genderValues,
+          labels: genderLabels,
+          type: 'pie',
+          textinfo: 'label+percent',
+          textposition: 'inside',
+          hole: 0.4,
+          marker: {
+            colors: ['#0057B8', '#E31B23', '#FFC72C', '#00A9E0']
+          }
+        }], {
+          title: {
+            text: 'Gender Distribution',
+            font: { size: 20, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' },
+            xref: 'paper',
+            x: 0.5,
+          },
+          showlegend: true,
+          paper_bgcolor: '#fff',
+          plot_bgcolor: '#fff',
+          legend: {
+            orientation: 'h',
+            y: -0.2,
+            x: 0.5,
+            xanchor: 'center',
+            font: { size: 14, color: '#222' }
+          },
+          margin: { t: 60, l: 40, r: 20, b: 60 },
+          responsive: true,
+        }, {responsive: true});
+    }
+
+    function updateRaceChart() {
+      const filtered = getFilteredData();
+      
+      // Calculate race distribution by summing across gender columns
+      const raceCounts = {
+        'American Indian': 0,
+        'Asian': 0,
+        'Black': 0,
+        'Hispanic': 0,
+        'White': 0,
+        'Native Hawaiian/Other Pacific Islander': 0,
+        'Two or More Races': 0,
+        'Other': 0,
+        'Unknown': 0
+      };
+
+      filtered.forEach(row => {
+        Object.keys(row).forEach(key => {
+          if (key.includes('- American Indian')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['American Indian'] += value;
+          } else if (key.includes('- Asian')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['Asian'] += value;
+          } else if (key.includes('- Black')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['Black'] += value;
+          } else if (key.includes('- Hispanic')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['Hispanic'] += value;
+          } else if (key.includes('- White')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['White'] += value;
+          } else if (key.includes('- Native Hawaiian/Other Pacific Islander')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['Native Hawaiian/Other Pacific Islander'] += value;
+          } else if (key.includes('- Two or More Races')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['Two or More Races'] += value;
+          } else if (key.includes('- Other')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['Other'] += value;
+          } else if (key.includes('- Unknown')) {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value)) raceCounts['Unknown'] += value;
+          }
+        });
+      });
+
+      const raceLabels = Object.keys(raceCounts);
+      const raceValues = Object.values(raceCounts);
+
+      console.log("Race Counts:", raceCounts);
+
+      if (raceValues.every(val => val === 0)) {
+          document.getElementById('raceChart').innerHTML = '<p>No race data available for this selection.</p>';
+          return;
+      }
+
+      Plotly.newPlot('raceChart', [{
+        values: raceValues,
+        labels: raceLabels,
+        type: 'pie',
+        textinfo: 'label+percent',
+        textposition: 'inside',
+        hole: 0.4,
+        marker: {
+          colors: [
+            '#0057B8', '#E31B23', '#FFC72C', '#00A9E0', '#78BE20', '#6E2585', '#F7941E', '#4D4F53', '#939598'
+          ]
+        }
+      }], {
+        title: {
+          text: 'Race Distribution',
+          font: { size: 20, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' },
+          xref: 'paper',
+          x: 0.5,
+        },
+        showlegend: true,
+        paper_bgcolor: '#fff',
+        plot_bgcolor: '#fff',
+        legend: {
+          orientation: 'h',
+          y: -0.2,
+          x: 0.5,
+          xanchor: 'center',
+          font: { size: 14, color: '#222' }
+        },
+        margin: { t: 60, l: 40, r: 20, b: 60 },
+        responsive: true,
+      }, {responsive: true});
+    }
+
+    // Add tab functionality to lazy load charts
+    const tabs = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Hide all tab contents
+        tabContents.forEach(content => {
+          content.style.display = 'none';
+        });
+        
+        // Remove active class from all tabs
+        tabs.forEach(t => {
+          t.classList.remove('active');
+        });
+        
+        // Show the selected tab content
+        const tabId = tab.getAttribute('data-tab');
+        document.getElementById(tabId).style.display = 'block';
+        tab.classList.add('active');
+        
+        // Only load charts for the active tab
+        if (tabId === 'gender-tab') {
+          updateGenderChart();
+        } else if (tabId === 'race-tab') {
+          updateRaceChart();
+        }
+      });
+    });
+    
+    // Initialize page properly after DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load initial data
+      loadAllCSVs();
+    });
+    
+    // Function to activate first tab after data is loaded
+    function activateFirstTab() {
+      if (tabs.length > 0) {
+        // Hide all tab contents first
+        tabContents.forEach(content => {
+          content.style.display = 'none';
+        });
+        
+        // Activate first tab
+        tabs[0].classList.add('active');
+        document.getElementById('gender-tab').style.display = 'block';
+        
+        // Load gender chart if data is available
+        if (allData && allData.length > 0) {
+          updateGenderChart();
+        }
+      }
+    }
+  </script>
+</body>
+</html>

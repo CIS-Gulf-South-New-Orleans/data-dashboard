@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CISEPA Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <style>
+    /* Tab styles */
+    .tab-container {
+      margin: 20px 0;
+    }
+    .tab-navigation {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .tab-button {
+      padding: 8px 16px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 4px 4px 0 0;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab-button.active {
+      background-color: #0057B8;
+      color: white;
+      border-color: #0057B8;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    /* Dashboard links styles */
+    .dashboard-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .link-group {
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .link-group:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .link-group h4 {
+      color: #0057B8;
+      margin-top: 0;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #0057B8;
+      padding-bottom: 8px;
+    }
+    
+    .link-group p {
+      margin-bottom: 15px;
+      color: #555;
+    }
+    
+    .dashboard-link {
+      display: inline-block;
+      background-color: #0057B8;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.2s;
+    }
+    
+    .dashboard-link:hover {
+      background-color: #003d82;
+    }
+    
+    /* Dashboard layout improvements */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .metrics-row .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+      border-left: 4px solid #0057B8;
+    }
+    
+    .metrics-row .card h3 {
+      margin: 0 0 10px 0;
+      color: #0057B8;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    
+    .metrics-row .card p {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .chart-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .chart-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-top: 3px solid #0057B8;
+    }
+    
+    .chart-card h3 {
+      margin: 0 0 15px 0;
+      color: #0057B8;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin: 20px 0;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .controls select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+      min-width: 150px;
+    }
+    
+    .controls select:focus {
+      outline: none;
+      border-color: #0057B8;
+      box-shadow: 0 0 0 2px rgba(0, 87, 184, 0.2);
+    }
+    
+    @media (max-width: 768px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .chart-section {
+        grid-template-columns: 1fr;
+      }
+      
+      .metrics-row {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+    }
+
+    /* Dashboard layout improvements */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    #student-services-overview {
+      padding-top: 80px;
+      margin-top: -80px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Section -->
+  <header class="site-header">
+    <div class="logo-container">
+      <div class="site-logo"></div>
+      <h1 class="site-title">CISEPA Dashboard</h1>
+    </div>
+    <div class="search-container">
+      <input type="text" placeholder="Search this site" class="search-bar">
+    </div>
+    <div class="accessibility-links">
+      <a href="#main-content" class="skip-link">Skip to main content</a>
+      <a href="#navigation" class="skip-link">Skip to navigation</a>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav id="navigation" class="main-nav">
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link active">Home</a></li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">Current Dashboards</a>
+        <ul class="dropdown-menu">
+          <li><a href="index.html#student-services-overview" class="active">Student Services Overview</a></li>
+          <li><a href="tier_activities.html">Tier Support Activities</a></li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">Annual Outcomes</a>
+        <ul class="dropdown-menu">
+          <li><a href="student_engagement.html">Students Served</a></li>
+          <li><a href="student_progress_tracker.html">Student Progress</a></li>
+          <li><a href="demographics.html">Demographics</a></li>
+          <li><a href="attributes.html">Student Attributes</a></li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">More...</a>
+        <ul class="dropdown-menu">
+          <li><a href="school.html">School Dashboard</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <h1 class="hero-title">Data at CIS of New Orleans</h1>
+      <div class="intro-text">
+        <p>At Communities in Schools of New Orleans (CISNO), our mission is to surround students with a community of support, empowering them to stay in school and achieve in life. Our <a href="http://www.ciseasternpa.org" target="_blank">Core Values are Connection, Accountability, Relationships, and Equity</a>.</p>
+        
+        <p>CISNO is an accredited affiliate of Communities in Schools National, and maintains a variety of operational standards related to data collection, reporting, and verification. As part of our model, we collect a broad range of data each year from annual studies of school demographics and community census data to individual and family risk factors for each of our case managed students.</p>
+        
+        <p>Our Operations Team trains, monitors, and regularly evaluates program data on a monthly, quarterly, and annual basis. They work closely with senior leadership to report our results to school district partners, funding agencies, and our board of directors throughout the year. Operations also works closely with our site professionals to provide ongoing review of our accreditation standards and evaluate overall site health.</p>
+        
+        <p>We review progress on our programs regularly throughout the year as part of a continuous improvement model that drives adjustment and helps us improve our impact on student and school-wide goals.</p>
+        
+        <p>As part of our Data Driven Culture, this website brings together annual, and ongoing visualizations of our agency, our network, and our impact on students and families.</p>
+      </div>
+    </section>
+
+    <!-- Main Content Sections -->
+
+    <section id="current-dashboards" class="content-section">
+      
+      <!-- Dashboard Links Section -->
+      <div class="dashboard-container">
+        <h3 class="dashboard-title">Available Dashboards</h3>
+        <p>Our dashboards have been organized into separate pages for easier navigation and improved performance.</p>
+        
+        <div class="dashboard-links">
+          <div class="link-group">
+            <h4>Tier Support Activities</h4>
+            <p>Explore comprehensive data on tier support activities across schools and years, including tier 2 and tier 3 support analysis.</p>
+            <a href="tier_activities.html" class="dashboard-link">View Tier Support Activities</a>
+          </div>
+          
+          <div class="link-group">
+            <h4>Student Progress Tracker</h4>
+            <p>Track student goal achievement and progress across different categories with comprehensive goal setting and outcome analysis.</p>
+            <a href="student_progress_tracker.html" class="dashboard-link">View Student Progress</a>
+          </div>
+          
+          <div class="link-group">
+            <h4>Demographics</h4>
+            <p>Analyze demographic information about our student caseload, including gender and race distribution.</p>
+            <a href="demographics.html" class="dashboard-link">View Demographics</a>
+          </div>
+          
+          <div class="link-group">
+            <h4>Student Attributes</h4>
+            <p>Explore student attribute data and characteristics across our programs.</p>
+            <a href="attributes.html" class="dashboard-link">View Student Attributes</a>
+          </div>
+
+          <div class="link-group">
+            <h4>School Dashboard</h4>
+            <p>View individual school-specific data and metrics for detailed analysis.</p>
+            <a href="school.html" class="dashboard-link">View School Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Summary Report Section -->
+    <section id="student-services-overview" class="content-section">
+      <h2 class="section-title">Student Services Dashboard</h2>
+      <p>This dashboard provides an overview of student services and support metrics across all schools.</p>
+      
+      <div class="controls">
+        <select id="schoolSelect" onchange="updateDashboard()">
+          <option value="all">All Schools</option>
+        </select>
+
+        <select id="yearSelect" onchange="updateDashboard()">
+          <option value="2023-2024">2023-2024</option>
+          <option value="2022-2023">2022-2023</option>
+          <option value="2021-2022">2021-2022</option>
+          <option value="2020-2021">2020-2021</option>
+          <option value="2019-2020">2019-2020</option>
+          <option value="2018-2019">2018-2019</option>
+          <option value="2017-2018">2017-2018</option>
+        </select>
+      </div>
+
+      <div class="metrics-row">
+        <div class="card"><h3>Student Enrollment</h3><p id="enrollment">-</p></div>
+        <div class="card"><h3>Total Students Served</h3><p id="served">-</p></div>
+        <div class="card"><h3>Parents Engaged</h3><p id="parents">-</p></div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Student Support Distribution</h3>
+          <div id="supportPie"></div>
+        </div>
+        <div class="chart-card">
+          <h3>Parents Engaged Over Time</h3>
+          <div id="parentTrend"></div>
+        </div>
+        <div class="chart-card">
+          <h3>Support Type by Year</h3>
+          <div id="stackedSupport"></div>
+        </div>
+        <div class="chart-card">
+          <h3>Student Outcomes by Category</h3>
+          <div id="outcomeChart"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Removed Monthly data and End of year data sections as per checklist -->
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <p class="attribution">Data and visualizations prepared by Jon Irons, Manager of Data and Evaluation. Contact with questions or to request additional data <a href="mailto:ironsj@ciseasternpa.org">ironsj@ciseasternpa.org</a> Call/Text: 484-891-1760</p>
+      <div class="utility-links">
+        <a href="#" class="utility-link">Report abuse</a>
+        <a href="#" class="utility-link">Page details</a>
+        <span class="page-updated">Page updated: May 31, 2025</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="js/navigation.js"></script>
+  <script src="js/charts.js"></script>
+  
+  <!-- Summary Report Scripts -->
+  <script>
+  const summaryReportCsvUrls = {
+    "2023-2024": 'student_data/CIS_EOY_2023_2024 - Student Data.csv',
+    "2022-2023": 'student_data/CIS_EOY_2022_2023 - Student Data.csv',
+    "2021-2022": 'student_data/CIS_EOY_2021_2022 - Student Data.csv',
+    "2020-2021": 'student_data/CIS_EOY_2020_2021 - Student Data.csv',
+    "2019-2020": 'student_data/CIS_EOY_2019_2020 - Student Data.csv',
+    "2018-2019": 'student_data/CIS_EOY_2018_2019 - Student Data.csv',
+    "2017-2018": 'student_data/CIS_EOY_2017_2018 - Student Data.csv'
+  };
+
+  let allData = [];
+
+  function loadAllCSVs() {
+    const filePromises = Object.entries(summaryReportCsvUrls).map(([yearKey, url]) =>
+      new Promise((resolve, reject) => {
+        Papa.parse(url, {
+          download: true,
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            const cleaned = results.data.map(row => {
+              const newRow = {};
+              for (let key in row) {
+                const cleanKey = key.trim().replace(/\s+/g, ' ');
+                newRow[cleanKey] = row[key];
+              }
+              let rawYear = newRow['Reporting Year'] || '';
+              const normalizedYear = rawYear.toString().replace(/(\d{4})\/(\d{4})\s*SY/i, '$1-$2');
+              newRow['Reporting Year'] = normalizedYear;
+              return newRow;
+            });
+            resolve(cleaned);
+          },
+          error: reject
+        });
+      })
+    );
+
+    Promise.all(filePromises).then(results => {
+      allData = results.flat();
+      populateSchoolDropdown();
+      updateDashboard();
+    }).catch(error => {
+      console.error('Error loading data:', error);
+      const errorMsg = '<div style="text-align: center; padding: 20px; color: #dc3545;">Error loading data</div>';
+      document.getElementById('supportPie').innerHTML = errorMsg;
+      document.getElementById('parentTrend').innerHTML = errorMsg;
+      document.getElementById('stackedSupport').innerHTML = errorMsg;
+      document.getElementById('outcomeChart').innerHTML = errorMsg;
+    });
+  }
+
+  function populateSchoolDropdown() {
+    const schools = Array.from(new Set(allData.map(d => d['School Name']).filter(Boolean)));
+    const select = document.getElementById('schoolSelect');
+    select.innerHTML = '<option value="all">All Schools</option>';
+    schools.sort().forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+  }
+
+  function updateDashboard() {
+    const school = document.getElementById('schoolSelect').value;
+    const year = document.getElementById('yearSelect').value;
+
+    const filtered = allData.filter(d =>
+      d['Reporting Year'] === year &&
+      (school === 'all' || d['School Name'] === school)
+    );
+
+    if (filtered.length === 0) {
+      document.getElementById('enrollment').textContent = '0';
+      document.getElementById('served').textContent = '0';
+      document.getElementById('parents').textContent = '0';
+      
+      const noDataMsg = '<div style="text-align: center; padding: 50px; color: #777;">No data available for selected filters</div>';
+      document.getElementById('supportPie').innerHTML = noDataMsg;
+      document.getElementById('parentTrend').innerHTML = noDataMsg;
+      document.getElementById('stackedSupport').innerHTML = noDataMsg;
+      document.getElementById('outcomeChart').innerHTML = noDataMsg;
+      return;
+    }
+
+    // Helper function to sum numeric values from a field across filtered data
+    const sumField = (field) => {
+      return filtered.reduce((sum, row) => {
+        const value = parseFloat(row[field]);
+        return sum + (isNaN(value) ? 0 : value);
+      }, 0);
+    };
+
+    // Use actual column names from student data CSV
+    const enrollment = sumField('Student Enrollment') || filtered.length;
+    const totalServed = sumField('Total Students Served') || sumField('Case Managed Students') || filtered.length;
+    const parentsEngaged = sumField('Parents Engaged') || 0;
+
+    document.getElementById('enrollment').textContent = enrollment;
+    document.getElementById('served').textContent = totalServed;
+    document.getElementById('parents').textContent = parentsEngaged;
+
+    // Support distribution pie chart
+    const caseManaged = sumField('Case Managed Students') || 0;
+    const nonCaseManaged = sumField('Non-Case Managed Students') || 0;
+    const wsOnlySupports = sumField('Number of Students w/ ONLY WS Supports') || 0;
+
+    if (caseManaged > 0 || nonCaseManaged > 0 || wsOnlySupports > 0) {
+      Plotly.newPlot('supportPie', [{
+        labels: ['Case Managed', 'Non-Case Managed', 'WS Only Supports'],
+        values: [caseManaged, nonCaseManaged, wsOnlySupports],
+        type: 'pie',
+        hole: 0.4,
+        marker: {
+          colors: ['#0057B8', '#E31B23', '#FFC72C']
+        },
+        textinfo: 'label+percent+value',
+        texttemplate: '%{label}<br>%{value} students<br>%{percent}'
+      }], {
+        title: {
+          text: 'Student Support Distribution',
+          font: { size: 16, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' }
+        },
+        paper_bgcolor: '#fff',
+        plot_bgcolor: '#fff',
+        margin: { t: 40, b: 20, l: 20, r: 20 },
+        height: 300
+      }, {responsive: true});
+    } else {
+      document.getElementById('supportPie').innerHTML = 
+        '<div style="text-align: center; padding: 50px; color: #777;">No support distribution data available</div>';
+    }
+
+    // Parent engagement trend by year
+    const parentTrendData = {};
+    allData.forEach(row => {
+      if (school === 'all' || row['School Name'] === school) {
+        const y = row['Reporting Year'];
+        if (y) {
+          const parents = parseFloat(row['Parents Engaged']) || 0;
+          parentTrendData[y] = (parentTrendData[y] || 0) + parents;
+        }
+      }
+    });
+
+    const years = Object.keys(parentTrendData).sort();
+    if (years.length > 0 && Object.values(parentTrendData).some(v => v > 0)) {
+      Plotly.newPlot('parentTrend', [{
+        x: years.map(y => y.replace('_', '-')),
+        y: years.map(y => parentTrendData[y]),
+        type: 'bar',
+        marker: { color: '#78BE20' },
+        text: years.map(y => parentTrendData[y]),
+        textposition: 'auto'
+      }], {
+        title: {
+          text: 'Parent Engagement Trend',
+          font: { size: 16, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' }
+        },
+        paper_bgcolor: '#fff',
+        plot_bgcolor: '#fff',
+        margin: { t: 40, b: 60, l: 40, r: 20 },
+        height: 300,
+        xaxis: { title: 'School Year' },
+        yaxis: { title: 'Parents Engaged' }
+      }, {responsive: true});
+    } else {
+      document.getElementById('parentTrend').innerHTML = 
+        '<div style="text-align: center; padding: 50px; color: #777;">No parent engagement trend data available</div>';
+    }
+
+    // Stacked support chart by year
+    const supportStacked = {};
+    allData.forEach(row => {
+      if (school === 'all' || row['School Name'] === school) {
+        const y = row['Reporting Year'];
+        if (y) {
+          supportStacked[y] = supportStacked[y] || { ws: 0, cm: 0 };
+          supportStacked[y].ws += parseFloat(row['Number of Students w/ ONLY WS Supports']) || 0;
+          supportStacked[y].cm += parseFloat(row['Case Managed Students']) || 0;
+        }
+      }
+    });
+
+    const supportYears = Object.keys(supportStacked).sort();
+    if (supportYears.length > 0) {
+      Plotly.newPlot('stackedSupport', [
+        {
+          name: 'WS Only Supports',
+          x: supportYears.map(y => y.replace('_', '-')),
+          y: supportYears.map(y => supportStacked[y].ws),
+          type: 'bar',
+          marker: { color: '#FFC72C' }
+        },
+        {
+          name: 'Case Managed Students',
+          x: supportYears.map(y => y.replace('_', '-')),
+          y: supportYears.map(y => supportStacked[y].cm),
+          type: 'bar',
+          marker: { color: '#0057B8' }
+        }
+      ], { 
+        barmode: 'stack',
+        title: {
+          text: 'Support Types by Year',
+          font: { size: 16, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' }
+        },
+        paper_bgcolor: '#fff',
+        plot_bgcolor: '#fff',
+        margin: { t: 40, b: 60, l: 40, r: 20 },
+        height: 300,
+        xaxis: { title: 'School Year' },
+        yaxis: { title: 'Number of Students' }
+      }, {responsive: true});
+    } else {
+      document.getElementById('stackedSupport').innerHTML = 
+        '<div style="text-align: center; padding: 50px; color: #777;">No stacked support data available</div>';
+    }
+
+    // Student outcomes chart using actual outcome columns
+    const k11Cols = [
+      "K-11 Promoted", "K-11 Graduated", "K-11 Retained", "K-11 Dropped Out",
+      "K-11 Transferred", "K-11 GED", "K-11 Expelled", "K-11 Incarcerated"
+    ];
+
+    const g12Cols = [
+      "Grade 12 Graduated", "Grade 12 Retained", "Grade 12 Dropped Out",
+      "Grade 12 Transferred", "Grade 12 GED", "Grade 12 Expelled"
+    ];
+
+    function getNonZeroColumns(columns) {
+      const colSums = {};
+      columns.forEach(col => {
+        colSums[col] = sumField(col);
+      });
+      return Object.entries(colSums)
+        .filter(([_, value]) => value > 0)
+        .reduce((acc, [k, v]) => {
+          acc.labels.push(k.replace(/^K-11 |^Grade 12 /, ''));
+          acc.values.push(v);
+          return acc;
+        }, { labels: [], values: [] });
+    }
+
+    const k11Data = getNonZeroColumns(k11Cols);
+    const g12Data = getNonZeroColumns(g12Cols);
+
+    const traces = [];
+
+    if (k11Data.labels.length > 0) {
+      traces.push({
+        name: 'K-11',
+        x: k11Data.values,
+        y: k11Data.labels,
+        type: 'bar',
+        orientation: 'h',
+        marker: { color: '#0057B8' }
+      });
+    }
+
+    if (g12Data.labels.length > 0) {
+      traces.push({
+        name: 'Grade 12',
+        x: g12Data.values,
+        y: g12Data.labels,
+        type: 'bar',
+        orientation: 'h',
+        marker: { color: '#E31B23' }
+      });
+    }
+
+    if (traces.length > 0) {
+      Plotly.newPlot('outcomeChart', traces, {
+        barmode: 'group',
+        title: {
+          text: 'Student Outcomes by Category',
+          font: { size: 16, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' }
+        },
+        paper_bgcolor: '#fff',
+        plot_bgcolor: '#fff',
+        margin: { l: 100, t: 40, b: 40, r: 20 },
+        height: 300,
+        xaxis: { title: 'Number of Students' }
+      }, {responsive: true});
+    } else {
+      document.getElementById('outcomeChart').innerHTML = 
+        '<div style="text-align: center; padding: 50px; color: #777;">No outcome data available for selected filters</div>';
+    }
+  }
+
+  // Load data when DOM is ready
+  document.addEventListener('DOMContentLoaded', function() {
+    loadAllCSVs();
+  });
+  </script>
+</body>
+</html>

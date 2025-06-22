@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Goals - CISEPA Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-top: 32px;
+      font-size: 2.5rem;
+      color: #0057B8;
+      letter-spacing: 1px;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin: 24px 0 32px 0;
+      flex-wrap: wrap;
+    }
+    label {
+      font-weight: 600;
+      margin-right: 8px;
+      color: #0057B8;
+    }
+    select {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #b0b8c1;
+      background: #fff;
+      font-size: 1rem;
+      transition: border 0.2s;
+    }
+    select:focus {
+      border: 1.5px solid #0057B8;
+      outline: none;
+    }
+    .charts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 32px;
+      max-width: 1600px;
+      margin: 0 auto 40px auto;
+      padding: 0 20px;
+    }
+    .chart-box {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(0, 87, 184, 0.07);
+      padding: 24px;
+      transition: box-shadow 0.2s;
+      margin-bottom: 6px;
+      border-top: 3px solid #0057B8;
+      min-height: 450px;
+    }
+    .chart-box.hidden {
+      display: none;
+    }
+    .chart-box:hover {
+      box-shadow: 0 6px 24px rgba(0, 87, 184, 0.17);
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 1.55rem; }
+      .charts-container { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Section -->
+  <header class="site-header">
+    <div class="logo-container">
+      <div class="site-logo"></div>
+      <h1 class="site-title">CISEPA Dashboard</h1>
+    </div>
+    <div class="search-container">
+      <input type="text" placeholder="Search this site" class="search-bar">
+    </div>
+    <div class="accessibility-links">
+      <a href="#main-content" class="skip-link">Skip to main content</a>
+      <a href="#navigation" class="skip-link">Skip to navigation</a>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav id="navigation" class="main-nav">
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">Current Dashboards</a>
+        <ul class="dropdown-menu">
+          <li><a href="student_support_dashboards.html">Support Profiles</a></li>
+          <li><a href="tier_support_activites.html">Tier Support Activities</a></li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">Annual Outcomes</a>
+        <ul class="dropdown-menu">
+          <li><a href="student_engagement.html">Students Served</a></li>
+          <li><a href="school_goals.html">Schoolwide Goals</a></li>
+          <li><a href="tier_support_activites.html">Tier Support Activities</a></li>
+          <li><a href="goals.html" class="active">Student Goals</a></li>
+          <li><a href="demographics.html">Demographics</a></li>
+          <li><a href="attributes.html">Student Attributes</a></li>
+          <li><a href="student_progress_tracker.html">Student Progress</a></li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">More...</a>
+        <ul class="dropdown-menu">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="#current-dashboards">Current Dashboards</a></li>
+          <li><a href="#annual-outcomes">Annual Outcomes</a></li>
+          <li><a href="tier_support_activites.html">Tier Support Activities</a></li>
+          <li><a href="tier_activities.html">Tier Activities</a></li>
+          <li><a href="tier_activities.html">Tier II</a></li>
+          <li><a href="tier_support_activites.html">Tier III</a></li>
+          <li><a href="student_progress_tracker.html">Student Progress Tracker</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <section class="content-section">
+      <h1 class="section-title">Student Goals</h1>
+      
+      <div class="controls">
+        <div><label for="yearSelect">Select Year:</label>
+          <select id="yearSelect" onchange="loadData()">
+            <option value="2023_2024" selected>2023-2024</option>
+            <option value="2022_2023">2022-2023</option>
+            <option value="2021_2022">2021-2022</option>
+            <option value="2020_2021">2020-2021</option>
+            <option value="2019_2020">2019-2020</option>
+            <option value="2018_2019">2018-2019</option>
+            <option value="2017_2018">2017-2018</option>
+          </select></div>
+        <div><label for="schoolSelect">Select School:</label>
+          <select id="schoolSelect" onchange="updateCharts()">
+            <option value="all">All Schools</option>
+          </select></div>
+        <div><label for="goalSelect">Select Goal:</label>
+          <select id="goalSelect" onchange="updateCharts()">
+            <option value="Attendance">Attendance</option>
+            <option value="Behavior">Behavior</option>
+            <option value="Academics">Academics</option>
+            <option value="SEL">SEL</option>
+            <option value="High Risk Behavior">High Risk Behavior</option>
+            <option value="College Readiness">College Readiness</option>
+            <option value="Career Readiness">Career Readiness</option>
+          </select></div>
+      </div>
+      
+      <div class="charts-container">
+        <div class="chart-box" id="progress-container"><div id="goal-progress-chart"></div></div>
+        <div class="chart-box" id="trends-container"><div id="goal-trends-chart"></div></div>
+        <div class="chart-box" id="comparative-container"><div id="comparative-chart"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <p class="attribution">Data and visualizations prepared by Jon Irons, Manager of Data and Evaluation. Contact with questions or to request additional data <a href="mailto:ironsj@ciseasternpa.org">ironsj@ciseasternpa.org</a> Call/Text: 484-891-1760</p>
+      <div class="utility-links">
+        <a href="#" class="utility-link">Report abuse</a>
+        <a href="#" class="utility-link">Page details</a>
+        <span class="page-updated">Page updated: May 31, 2025</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="js/navigation.js"></script>
+
+  <script>
+
+    const csvUrls = {
+      "2023_2024": 'student_data/CIS_EOY_2023_2024 - Student Data.csv',
+      "2022_2023": 'student_data/CIS_EOY_2022_2023 - Student Data.csv',
+      "2021_2022": 'student_data/CIS_EOY_2021_2022 - Student Data.csv',
+      "2020_2021": 'student_data/CIS_EOY_2020_2021 - Student Data.csv',
+      "2019_2020": 'student_data/CIS_EOY_2019_2020 - Student Data.csv',
+      "2018_2019": 'student_data/CIS_EOY_2018_2019 - Student Data.csv',
+      "2017_2018": 'student_data/CIS_EOY_2017_2018 - Student Data.csv'
+    };
+
+    let data = [];
+    let previousYearData = [];
+
+    function loadData() {
+      const selectedYear = document.getElementById('yearSelect').value;
+      const csvUrl = csvUrls[selectedYear];
+
+      console.log("Fetching CSV from:", csvUrl);
+
+      // Disable controls while loading
+      document.querySelectorAll('select').forEach(select => select.disabled = true);
+      
+      // Show loading message in chart containers
+      document.getElementById('goal-progress-chart').innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Loading data...</div>';
+      document.getElementById('goal-trends-chart').innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Loading data...</div>';
+      document.getElementById('comparative-chart').innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Loading data...</div>';
+
+      Papa.parse(csvUrl, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          if (results.errors.length > 0) {
+            console.error('CSV parsing errors:', results.errors);
+          }
+          
+          data = results.data;
+          console.log("Loaded", data.length, "student records");
+          
+          // Re-enable controls
+          document.querySelectorAll('select').forEach(select => select.disabled = false);
+          
+          // Populate dropdowns
+          populateSchoolDropdown();
+          
+          // Load previous year data for comparison
+          loadPreviousYearData();
+          
+          // Update charts
+          updateCharts();
+        },
+        error: function(error) {
+          console.error('Error loading CSV:', error);
+          
+          // Re-enable controls
+          document.querySelectorAll('select').forEach(select => select.disabled = false);
+          
+          // Show error message
+          document.getElementById('goal-progress-chart').innerHTML = '<div class="error">Error loading data. Please check the CSV file.</div>';
+          document.getElementById('goal-trends-chart').innerHTML = '<div class="error">Error loading data. Please check the CSV file.</div>';
+          document.getElementById('comparative-chart').innerHTML = '<div class="error">Error loading data. Please check the CSV file.</div>';
+        }
+      });
+    }
+
+    function populateSchoolDropdown() {
+      const schoolSelect = document.getElementById('schoolSelect');
+      schoolSelect.innerHTML = '<option value="all">All Schools</option>';
+
+      // Look for school name in different possible column names
+      const schoolColumns = ['School Name', 'School', 'school', 'SchoolName', 'School_Name'];
+      let schoolColumn = schoolColumns.find(col => data[0] && data[0][col] !== undefined) || 'School Name';
+      
+      // Get unique schools
+      const schools = [];
+      data.forEach(row => {
+        const school = row[schoolColumn];
+        if (school && !schools.includes(school)) {
+          schools.push(school);
+        }
+      });
+      
+      // Sort schools alphabetically
+      schools.sort();
+      
+      // Add schools to dropdown
+      schools.forEach(school => {
+        const option = document.createElement('option');
+        option.value = school;
+        option.textContent = school;
+        schoolSelect.appendChild(option);
+      });
+    }
+
+    function updateCharts() {
+      // Show all containers initially
+      document.getElementById('progress-container').classList.remove('hidden');
+      document.getElementById('trends-container').classList.remove('hidden');
+      document.getElementById('comparative-container').classList.remove('hidden');
+
+      const selectedSchool = document.getElementById('schoolSelect').value;
+      const selectedGoal = document.getElementById('goalSelect').value;
+      
+      // Filter data by selected school
+      let filteredData = data;
+      if (selectedSchool !== 'all') {
+        filteredData = data.filter(item => item['School Name'] === selectedSchool);
+      }
+
+      if (filteredData.length === 0) {
+        document.getElementById('goal-progress-chart').innerHTML = '<div style="text-align: center; padding: 50px; color: #777;">No data available for the selected filters</div>';
+        document.getElementById('goal-trends-chart').innerHTML = '<div style="text-align: center; padding: 50px; color: #777;">No trend data available</div>';
+        document.getElementById('comparative-chart').innerHTML = '<div style="text-align: center; padding: 50px; color: #777;">No comparative data available</div>';
+        return;
+      }
+
+      // Get column names for the selected goal
+      const goalColumn = `${selectedGoal}: CM students w/ goal`;
+      const metGoalColumn = `${selectedGoal}: CM students met goal`;
+      const progressColumn = `${selectedGoal}: CM students not met, with progress`;
+      const noProgressColumn = `${selectedGoal}: CM students not met, no progress`;
+
+      // Calculate totals across all filtered data
+      let totalWithGoals = 0;
+      let totalMetGoal = 0;
+      let totalWithProgress = 0;
+      let totalNoProgress = 0;
+
+      filteredData.forEach(row => {
+        totalWithGoals += parseInt(row[goalColumn]) || 0;
+        totalMetGoal += parseInt(row[metGoalColumn]) || 0;
+        totalWithProgress += parseInt(row[progressColumn]) || 0;
+        totalNoProgress += parseInt(row[noProgressColumn]) || 0;
+      });
+
+      // Create goal progress chart
+      if (totalWithGoals > 0) {
+        const progressData = [
+          { name: 'Met Goal', value: totalMetGoal, color: '#28a745' },
+          { name: 'Progress Made', value: totalWithProgress, color: '#ffc107' },
+          { name: 'No Progress', value: totalNoProgress, color: '#dc3545' }
+        ];
+
+        Plotly.newPlot('goal-progress-chart', [{
+          labels: progressData.map(d => d.name),
+          values: progressData.map(d => d.value),
+          type: 'pie',
+          hole: 0.4,
+          marker: {
+            colors: progressData.map(d => d.color)
+          },
+          textinfo: 'label+percent+value',
+          texttemplate: '%{label}<br>%{value} students<br>%{percent}'
+        }], {
+          title: {
+            text: `${selectedGoal} Goal Progress - ${selectedSchool === 'all' ? 'All Schools' : selectedSchool}`,
+            font: { size: 18, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' }
+          },
+          paper_bgcolor: '#fff',
+          plot_bgcolor: '#fff',
+          margin: { t: 60, b: 60, l: 30, r: 30 },
+          height: 400
+        }, {responsive: true});
+      } else {
+        // Hide the progress container when no data is available
+        document.getElementById('progress-container').classList.add('hidden');
+      }
+
+      // Create comparative chart across all goal types
+      const goalTypes = ['Attendance', 'Behavior', 'Academics', 'SEL', 'High Risk Behavior', 'College Readiness', 'Career Readiness'];
+      const goalData = goalTypes.map(goal => {
+        const col = `${goal}: CM students w/ goal`;
+        const metCol = `${goal}: CM students met goal`;
+        
+        const totalGoals = filteredData.reduce((sum, row) => sum + (parseInt(row[col]) || 0), 0);
+        const totalMet = filteredData.reduce((sum, row) => sum + (parseInt(row[metCol]) || 0), 0);
+        const successRate = totalGoals > 0 ? (totalMet / totalGoals * 100) : 0;
+        
+        return {
+          goal: goal,
+          totalGoals: totalGoals,
+          totalMet: totalMet,
+          successRate: successRate
+        };
+      });
+
+      // Filter out goals with no data
+      const validGoalData = goalData.filter(g => g.totalGoals > 0);
+
+      if (validGoalData.length > 0) {
+        Plotly.newPlot('comparative-chart', [{
+          x: validGoalData.map(g => g.goal),
+          y: validGoalData.map(g => g.successRate),
+          type: 'bar',
+          marker: { color: '#0057B8' },
+          text: validGoalData.map(g => `${g.successRate.toFixed(1)}%`),
+          textposition: 'auto'
+        }], {
+          title: {
+            text: 'Goal Success Rates by Category',
+            font: { size: 18, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' }
+          },
+          paper_bgcolor: '#fff',
+          plot_bgcolor: '#fff',
+          margin: { t: 60, b: 120, l: 60, r: 30 },
+          height: 400,
+          xaxis: {
+            tickangle: -45,
+            tickfont: { size: 12 }
+          },
+          yaxis: {
+            title: 'Success Rate (%)',
+            range: [0, 100]
+          }
+        }, {responsive: true});
+      } else {
+        // Hide the comparative container when no data is available
+        document.getElementById('comparative-container').classList.add('hidden');
+      }
+
+      // Create trends chart with yearly comparison if previous year data is available
+      if (previousYearData && previousYearData.length > 0) {
+        const prevFilteredData = selectedSchool === 'all' 
+          ? previousYearData 
+          : previousYearData.filter(item => item['School Name'] === selectedSchool);
+
+        let prevTotalWithGoals = 0;
+        let prevTotalMetGoal = 0;
+
+        prevFilteredData.forEach(row => {
+          prevTotalWithGoals += parseInt(row[goalColumn]) || 0;
+          prevTotalMetGoal += parseInt(row[metGoalColumn]) || 0;
+        });
+
+        const currentSuccessRate = totalWithGoals > 0 ? (totalMetGoal / totalWithGoals * 100) : 0;
+        const prevSuccessRate = prevTotalWithGoals > 0 ? (prevTotalMetGoal / prevTotalWithGoals * 100) : 0;
+
+        const selectedYear = document.getElementById('yearSelect').value;
+        const years = Object.keys(csvUrls);
+        const currentYearIndex = years.indexOf(selectedYear);
+        const previousYear = currentYearIndex < years.length - 1 ? years[currentYearIndex + 1] : "Previous";
+
+        // Show the trends container
+        document.getElementById('trends-container').classList.remove('hidden');
+
+        Plotly.newPlot('goal-trends-chart', [
+          {
+            x: ['Students with Goals', 'Goals Met', 'Success Rate (%)'],
+            y: [totalWithGoals, totalMetGoal, currentSuccessRate],
+            type: 'bar',
+            name: selectedYear.replace('_', '-'),
+            marker: { color: '#0057B8' }
+          },
+          {
+            x: ['Students with Goals', 'Goals Met', 'Success Rate (%)'],
+            y: [prevTotalWithGoals, prevTotalMetGoal, prevSuccessRate],
+            type: 'bar',
+            name: previousYear.replace('_', '-'),
+            marker: { color: '#78BE20' }
+          }
+        ], {
+          title: {
+            text: `Year-over-Year Comparison: ${selectedGoal}`,
+            font: { size: 18, color: '#0057B8', family: 'Segoe UI, Arial, sans-serif' }
+          },
+          paper_bgcolor: '#fff',
+          plot_bgcolor: '#fff',
+          barmode: 'group',
+          margin: { t: 60, b: 80, l: 50, r: 30 },
+          height: 400
+        }, {responsive: true});
+      } else {
+        // Hide the trends container when no data is available
+        document.getElementById('trends-container').classList.add('hidden');
+      }
+    }
+
+    // Load previous year data for comparison
+    function loadPreviousYearData() {
+      const years = Object.keys(csvUrls);
+      const currentYearIndex = years.indexOf(document.getElementById('yearSelect').value);
+      if (currentYearIndex < years.length - 1) {
+        const previousYear = years[currentYearIndex + 1];
+        Papa.parse(csvUrls[previousYear], {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            previousYearData = results.data;
+            updateCharts(); // Refresh charts with comparison data
+          },
+          error: function(error) {
+            console.error('Error loading previous year data:', error);
+            previousYearData = null;
+          }
+        });
+      }
+    }
+
+    // Load initial dataset when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      loadData();
+    });
+  </script>
+</body>
+</html>

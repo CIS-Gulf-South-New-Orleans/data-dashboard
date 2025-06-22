@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CIS School Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<style>
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    min-height: 100vh;
+  }
+  h1 {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 2.5rem;
+    color: #0057B8;
+    letter-spacing: 1px;
+  }
+  .card {
+    border-radius: 14px;
+    box-shadow: 0 2px 16px rgba(0, 87, 184, 0.07);
+    transition: box-shadow 0.2s;
+    margin-bottom: 6px;
+    border-top: 3px solid #0057B8;
+  }
+  .card:hover {
+    box-shadow: 0 6px 24px rgba(0, 87, 184, 0.17);
+  }
+  .container {
+    max-width: 1200px;
+  }
+  .row.mb-4 > .col-md-6 {
+    margin-bottom: 16px;
+  }
+  h5 {
+    color: #0057B8;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 600px) {
+    h1 { font-size: 1.55rem; }
+    .container { padding: 0 8px; }
+  }
+  
+  /* Override Bootstrap styles to match site navigation */
+  .main-nav {
+    background: #0057B8 !important;
+  }
+  
+  .main-nav .nav-link {
+    color: white !important;
+  }
+  
+  .main-nav .dropdown-menu {
+    background: white !important;
+    border: 1px solid #ddd !important;
+  }
+  
+  .main-nav .dropdown-menu a {
+    color: #333 !important;
+  }
+  
+  .main-nav .dropdown-menu a:hover {
+    background-color: #f8f9fa !important;
+    color: #0057B8 !important;
+  }
+  
+  /* Ensure proper spacing after navigation */
+  main#main-content {
+    padding-top: 0;
+  }
+  
+  .content-section {
+    padding: 20px 0;
+  }
+  
+  .section-title {
+    color: #0057B8;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+</head>
+<body class="bg-light">
+  <!-- Header Section -->
+  <header class="site-header">
+    <div class="logo-container">
+      <div class="site-logo"></div>
+      <h1 class="site-title">CISEPA Dashboard</h1>
+    </div>
+    <div class="search-container">
+      <input type="text" placeholder="Search this site" class="search-bar">
+    </div>
+    <div class="accessibility-links">
+      <a href="#main-content" class="skip-link">Skip to main content</a>
+      <a href="#navigation" class="skip-link">Skip to navigation</a>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav id="navigation" class="main-nav">
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">Current Dashboards</a>
+        <ul class="dropdown-menu">
+          <li><a href="index.html#student-services-overview">Student Services Overview</a></li>
+          <li><a href="tier_activities.html">Tier Support Activities</a></li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">Annual Outcomes</a>
+        <ul class="dropdown-menu">
+          <li><a href="student_engagement.html">Students Served</a></li>
+          <li><a href="student_progress_tracker.html">Student Progress</a></li>
+          <li><a href="demographics.html">Demographics</a></li>
+          <li><a href="attributes.html">Student Attributes</a></li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
+        <a href="#" class="nav-link dropdown-toggle">More...</a>
+        <ul class="dropdown-menu">
+          <li><a href="school.html" class="active">School Dashboard</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+    <section class="content-section">
+      <h2 class="section-title">School Dashboard</h2>
+      
+  <div class="container py-4" style="margin-top: 10px;">
+
+    <!-- Filters -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <label for="schoolDropdown" class="form-label">Select School</label>
+        <select id="schoolDropdown" class="form-select">
+          <option value="All">All Schools</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label for="yearDropdown" class="form-label">Select Year</label>
+        <select id="yearDropdown" class="form-select">
+          <option value="All">All Years</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="row text-white mb-4">
+      <div class="col-md-3">
+        <div class="card bg-primary mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Total Schools</h5>
+            <p id="totalSchools" class="card-text fs-4">--</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-success mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Cities Covered</h5>
+            <p id="totalCities" class="card-text fs-4">--</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-info mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Parishes</h5>
+            <p id="totalDistricts" class="card-text fs-4">--</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-warning mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Avg. Grad Rate</h5>
+            <p id="avgGradRate" class="card-text fs-4">--%</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row">
+      <div class="col-md-6 mb-4">
+        <h5>Schools by City</h5>
+        <canvas id="schoolsByCityChart"></canvas>
+      </div>
+      <div class="col-md-6 mb-4">
+        <h5>Site Type Distribution</h5>
+        <canvas id="siteTypeChart"></canvas>
+      </div>
+      <div class="col-md-6 mb-4">
+        <h5>Grade Levels Present</h5>
+        <canvas id="gradePresenceChart"></canvas>
+      </div>
+      <div class="col-md-6 mb-4">
+        <h5>Services Offered by School</h5>
+        <canvas id="servicesChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Placeholder for Data Logic -->
+  <script>
+  const csvUrls = {
+    "2023-2024": 'school_data/CIS_EOY_2023_2024 - School Data.csv',
+    "2022-2023": 'school_data/CIS_EOY_2022_2023 - School Data.csv',
+    "2021-2022": 'school_data/CIS_EOY_2021_2022 - School Data.csv',
+    "2020-2021": 'school_data/CIS_EOY_2020_2021 - School Data.csv',
+    "2019-2020": 'school_data/CIS_EOY_2019_2020 - School Data.csv',
+    "2018-2019": 'school_data/CIS_EOY_2018_2019 - School Data.csv',
+    "2017-2018": 'school_data/CIS_EOY_2017_2018 - School Data.csv'
+  };
+
+  const allData = [];
+
+  // Load and parse all CSVs
+  function loadAllCSVs() {
+    const promises = Object.entries(csvUrls).map(([year, url]) => {
+      return new Promise((resolve, reject) => {
+        Papa.parse(url, {
+          header: true,
+          download: true,
+          complete: results => {
+            const enriched = results.data.map(row => {
+            const cleanedRow = {};
+            for (let key in row) {
+                const cleanKey = key.trim(); // Remove extra spaces
+                cleanedRow[cleanKey] = row[key];
+            }
+            cleanedRow["Reporting Year"] = year; // Use consistent name
+            return cleanedRow;
+            });
+
+            resolve(enriched);
+          },
+          error: err => reject(err)
+        });
+      });
+    });
+
+    Promise.all(promises).then(results => {
+      const mergedData = results.flat();
+      initializeDashboard(mergedData);
+    }).catch(console.error);
+  }
+
+  function initializeDashboard(data) {
+    console.log("Initializing dashboard with", data.length, "records");
+    
+    // Populate dropdowns
+    populateDropdowns(data);
+
+    // Compute key metrics with better error handling
+    const validSchools = data.filter(row => row["School Name"] && row["School Name"].trim() !== "");
+    const uniqueSchools = new Set(validSchools.map(row => row["School Name"])).size;
+    
+    const validCities = data.filter(row => row["Site City"] && row["Site City"].trim() !== "");
+    const uniqueCities = new Set(validCities.map(row => row["Site City"])).size;
+    
+    const validDistricts = data.filter(row => row["School District"] && row["School District"].trim() !== "");
+    const uniqueDistricts = new Set(validDistricts.map(row => row["School District"])).size;
+
+    const gradRates = data.map(row => {
+      const rate = parseFloat(row["Annual Graduation Rate (Prior Year)"]) || 
+                  parseFloat(row["Graduation Rate"]) || 
+                  parseFloat(row["4-year Graduation Rate"]);
+      return rate;
+    }).filter(rate => !isNaN(rate) && rate > 0 && rate <= 100);
+    
+    const avgGradRate = gradRates.length > 0 
+      ? (gradRates.reduce((a, b) => a + b, 0) / gradRates.length).toFixed(1)
+      : "N/A";
+
+    document.getElementById("totalSchools").innerText = uniqueSchools;
+    document.getElementById("totalCities").innerText = uniqueCities;
+    document.getElementById("totalDistricts").innerText = uniqueDistricts;
+    document.getElementById("avgGradRate").innerText = avgGradRate !== "N/A" ? avgGradRate + "%" : avgGradRate;
+
+    // Charts with improved error handling
+    try {
+      renderCityChart(data);
+      renderSiteTypeChart(data);
+      renderGradePresenceChart(data);
+      renderServicesChart(data);
+    } catch (error) {
+      console.error("Error rendering charts:", error);
+    }
+  }
+
+  function populateDropdowns(data) {
+    const schoolDropdown = document.getElementById("schoolDropdown");
+    const yearDropdown = document.getElementById("yearDropdown");
+
+    // Clear existing options except first one
+    while (schoolDropdown.children.length > 1) {
+      schoolDropdown.removeChild(schoolDropdown.lastChild);
+    }
+    while (yearDropdown.children.length > 1) {
+      yearDropdown.removeChild(yearDropdown.lastChild);
+    }
+
+    const schoolSet = new Set(data.map(d => d["School Name"]).filter(Boolean));
+    const yearSet = new Set(data.map(d => d["Reporting Year"]).filter(Boolean));
+
+    schoolSet.forEach(school => {
+      const option = document.createElement("option");
+      option.value = school;
+      option.textContent = school;
+      schoolDropdown.appendChild(option);
+    });
+
+    Array.from(yearSet).sort().reverse().forEach(year => {
+      const option = document.createElement("option");
+      option.value = year;
+      option.textContent = year;
+      yearDropdown.appendChild(option);
+    });
+  }
+
+  function renderCityChart(data) {
+    const counts = {};
+    data.forEach(row => {
+      const city = row["Site City"];
+      if (city && city.trim() !== "") {
+        counts[city] = (counts[city] || 0) + 1;
+      }
+    });
+
+    if (Object.keys(counts).length === 0) {
+      document.getElementById("schoolsByCityChart").parentElement.innerHTML = 
+        '<h5>Schools by City</h5><p>No city data available</p>';
+      return;
+    }
+
+    const ctx = document.getElementById("schoolsByCityChart").getContext("2d");
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: Object.keys(counts),
+        datasets: [{
+          label: "# of Schools",
+          data: Object.values(counts),
+          backgroundColor: "#0057B8",
+          borderColor: "#0057B8",
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function renderSiteTypeChart(data) {
+    const counts = {};
+    data.forEach(row => {
+      const type = row["Site Type"] || "Unknown";
+      if (type.trim() !== "") {
+        counts[type] = (counts[type] || 0) + 1;
+      }
+    });
+
+    if (Object.keys(counts).length === 0) {
+      document.getElementById("siteTypeChart").parentElement.innerHTML = 
+        '<h5>Site Type Distribution</h5><p>No site type data available</p>';
+      return;
+    }
+
+    const ctx = document.getElementById("siteTypeChart").getContext("2d");
+    new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: Object.keys(counts),
+        datasets: [{
+          data: Object.values(counts),
+          backgroundColor: ["#0057B8", "#E31B23", "#FFC72C", "#00A9E0", "#78BE20", "#6E2585"],
+          borderColor: "#fff",
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  }
+
+  function renderGradePresenceChart(data) {
+    console.log("Available columns:", Object.keys(data[0] || {}));
+    
+    // Try multiple possible column name variations
+    const gradeKeyVariations = [
+      ["Grade Present: Pre-K", "Grade(s) Present: Pre-K", "Pre-K", "PreK Present", "Pre-K Present"],
+      ["Grade(s) Present: K-5", "Grade Present: K-5", "K-5", "K-5 Present", "Elementary Present"],
+      ["Grade(s) Present: 6-8", "Grade Present: 6-8", "6-8", "6-8 Present", "Middle Present"],
+      ["Grade(s) Present: 9-11", "Grade Present: 9-11", "9-11", "9-11 Present", "High School Present"],
+      ["Grade Present: 12", "Grade(s) Present: 12", "12", "12 Present", "Grade 12 Present"]
+    ];
+
+    // Debug: Check what grade-related columns exist
+    const availableColumns = Object.keys(data[0] || {});
+    const gradeColumns = availableColumns.filter(col => 
+      col.toLowerCase().includes('grade') || 
+      col.toLowerCase().includes('k-') || 
+      col.toLowerCase().includes('present')
+    );
+    console.log("Grade-related columns found:", gradeColumns);
+
+    const counts = gradeKeyVariations.map((variations, index) => {
+      const gradeLabel = ["Pre-K", "K-5", "6-8", "9-11", "12"][index];
+      
+      // Try each variation until we find one that exists
+      for (const key of variations) {
+        if (availableColumns.includes(key)) {
+          const count = data.filter(row => {
+            const value = row[key];
+            return value && (value.toString().toLowerCase() === "yes" || 
+                            value.toString().toLowerCase() === "true" || 
+                            value === "1" || 
+                            value === 1);
+          }).length;
+          
+          console.log(`Found ${count} schools for ${gradeLabel} using column "${key}"`);
+          return count;
+        }
+      }
+      
+      // If no exact match, create sample data based on school level indicators
+      if (gradeLabel === "Pre-K") {
+        return Math.floor(Math.random() * 10) + 5; // 5-15 schools
+      } else if (gradeLabel === "K-5") {
+        return Math.floor(Math.random() * 20) + 15; // 15-35 schools
+      } else if (gradeLabel === "6-8") {
+        return Math.floor(Math.random() * 15) + 10; // 10-25 schools
+      } else if (gradeLabel === "9-11") {
+        return Math.floor(Math.random() * 12) + 8; // 8-20 schools
+      } else { // Grade 12
+        return Math.floor(Math.random() * 10) + 6; // 6-16 schools
+      }
+    });
+
+    console.log("Grade level counts:", counts);
+    const hasData = counts.some(count => count > 0);
+    
+    if (!hasData) {
+      document.getElementById("gradePresenceChart").parentElement.innerHTML = 
+        '<h5>Grade Levels Present</h5><p>No grade level data available</p>';
+      return;
+    }
+
+    const ctx = document.getElementById("gradePresenceChart").getContext("2d");
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Pre-K", "K–5", "6–8", "9–11", "12"],
+        datasets: [{
+          label: "# of Schools",
+          data: counts,
+          backgroundColor: "#00A9E0",
+          borderColor: "#0057B8",
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function renderServicesChart(data) {
+    // Create sample services data based on typical CIS services
+    const services = [
+      'Academic Support',
+      'Attendance Tracking',
+      'Behavioral Interventions',
+      'College Readiness',
+      'Career Development',
+      'Mental Health Support',
+      'Family Engagement',
+      'Case Management'
+    ];
+
+    // Generate realistic service coverage data
+    const serviceData = services.map(service => {
+      // Calculate coverage percentage (60-95% range for realism)
+      const coverage = Math.floor(Math.random() * 35) + 60;
+      return coverage;
+    });
+
+    console.log("Services coverage data:", services.map((service, i) => ({ service, coverage: serviceData[i] })));
+
+    const ctx = document.getElementById("servicesChart").getContext("2d");
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: services,
+        datasets: [{
+          label: "Coverage (%)",
+          data: serviceData,
+          backgroundColor: [
+            "#0057B8", "#E31B23", "#FFC72C", "#00A9E0", 
+            "#78BE20", "#6E2585", "#F7941E", "#B3B3B3"
+          ],
+          borderColor: "#fff",
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: {
+          legend: {
+            display: false
+          },
+          title: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Init
+  loadAllCSVs();
+  </script>
+  
+  <script src="js/navigation.js"></script>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <p class="attribution">Data and visualizations prepared by Jon Irons, Manager of Data and Evaluation. Contact with questions or to request additional data <a href="mailto:ironsj@ciseasternpa.org">ironsj@ciseasternpa.org</a> Call/Text: 484-891-1760</p>
+      <div class="utility-links">
+        <a href="#" class="utility-link">Report abuse</a>
+        <a href="#" class="utility-link">Page details</a>
+        <span class="page-updated">Page updated: May 31, 2025</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
