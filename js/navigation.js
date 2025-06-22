@@ -1,4 +1,4 @@
-// Navigation functionality for CISEPA Dashboard
+// Navigation functionality for CISNOLA Dashboard
 
 document.addEventListener('DOMContentLoaded', function() {
   // Mobile navigation toggle

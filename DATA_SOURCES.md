@@ -1,6 +1,6 @@
-# Data Sources for CISEPA Dashboard
+# Data Sources for CISNOLA Dashboard
 
-This document explains how to update the data sources for the CISEPA Dashboard.
+This document explains how to update the data sources for the CISNOLA Dashboard.
 
 ## Current Data Structure
 

@@ -1,6 +1,11 @@
-# CISEPA Dashboard
+# CISNOLA Dashboard
 
-This repository contains the CISEPA Dashboard website, designed to visualize data from Communities In Schools of Eastern Pennsylvania.
+This repository contains the CISNOLA Dashboard website, designed to visualize data from Communities In Schools Gulf South.
+
+###
+HOW TO UPDATE:
+
+SEE PDF NAMED: Update_annual.pdf
 
 ## Project Structure
 
@@ -17,8 +22,7 @@ This repository contains the CISEPA Dashboard website, designed to visualize dat
 
 ## Data Sources
 
-The dashboard uses CSV data from the following GitHub repository:
-https://github.com/rdupart/student_support_dashboard/
+The dashboard uses CSV data from the following GitHub repository.
 
 ## Deployment Instructions
 

@@ -1,4 +1,4 @@
-// Charts functionality for CISEPA Dashboard
+// Charts functionality for CISNOLA Dashboard
 
 // Global variables
 let supportData = [];
